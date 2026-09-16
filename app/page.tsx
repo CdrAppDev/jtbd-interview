@@ -12,11 +12,14 @@ export default async function Home() {
   return (
     <main className="wrap stack-lg">
       <header className="stack">
-        <div className="eyebrow">Interview · {job.executor_name}, {job.executor_role}</div>
+        <div className="eyebrow">Interview</div>
         <div>
           <div className="eyebrow" style={{ color: "var(--accent)" }}>The job</div>
           <h1 style={{ fontSize: "clamp(28px, 4.5vw, 40px)", marginTop: 4 }}>{job.title}.</h1>
         </div>
+        <p className="muted" style={{ maxWidth: "60ch" }}>
+          You do this job, so you're the expert here. We're working out what to fix and which information this work really depends on. Before anything gets decided, we want to understand the job as you actually do it.
+        </p>
         <p className="muted" style={{ maxWidth: "60ch" }}>{job.description}</p>
       </header>
 
@@ -31,12 +34,15 @@ export default async function Home() {
           ))}
         </ol>
         <p className="hint">
-          Everything here is about this one job, not your whole role. Answer from your own experience: how the work goes today, not how it is supposed to go.
+          There are no right answers. The gap between how the job is supposed to work and how it really works is exactly what we're looking for, so don't clean it up.
         </p>
       </section>
 
       <section className="section">
         <h2>Before you start</h2>
+        <p className="hint">
+          Your name is attached so the project team can tell responses apart and follow up on what you share.
+        </p>
         <StartForm jobId={job.id} />
       </section>
     </main>
