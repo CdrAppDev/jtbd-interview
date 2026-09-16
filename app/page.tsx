@@ -13,7 +13,10 @@ export default async function Home() {
     <main className="wrap stack-lg">
       <header className="stack">
         <div className="eyebrow">Interview · {job.executor_name}, {job.executor_role}</div>
-        <h1 style={{ fontSize: "clamp(28px, 4.5vw, 40px)" }}>{job.title}.</h1>
+        <div>
+          <div className="eyebrow" style={{ color: "var(--accent)" }}>The job</div>
+          <h1 style={{ fontSize: "clamp(28px, 4.5vw, 40px)", marginTop: 4 }}>{job.title}.</h1>
+        </div>
         <p className="muted" style={{ maxWidth: "60ch" }}>{job.description}</p>
       </header>
 
@@ -28,7 +31,7 @@ export default async function Home() {
           ))}
         </ol>
         <p className="hint">
-          For this run, put yourself in Derek's shoes. Answer as the person doing this job at a Salesforce implementation partner, using whatever real experience you have with proposals, SOWs and handoffs.
+          Everything here is about this one job, not your whole role. Answer from your own experience: how the work goes today, not how it is supposed to go.
         </p>
       </section>
 

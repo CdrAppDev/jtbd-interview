@@ -31,7 +31,7 @@ export default function StartForm({ jobId }: { jobId: string }) {
         <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
       </div>
       <div className="field">
-        <label htmlFor="role">Your actual role (optional)</label>
+        <label htmlFor="role">Your role (optional)</label>
         <input id="role" type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Delivery lead, Architect, AE" />
       </div>
       {err && <p className="err">{err}</p>}
