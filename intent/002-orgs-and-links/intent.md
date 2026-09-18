@@ -1,5 +1,5 @@
 # Intent: organizations, client contacts, jobs, and interview links
-Author: Chris. Status: draft. Date: 2026-09-18.
+Author: Chris. Status: accepted. Date: 2026-09-18.
 
 ## Problem
 The app runs one job for one implied organization with no access control. The results page is public and any visitor with the anon key can read every answer. I cannot set up a job for a client, give their contact a link to share with workers, see how many interviews are done, or see results for that job alone. Job content is seeded by hand in SQL.
@@ -27,6 +27,8 @@ The app runs one job for one implied organization with no access control. The re
 - One shared link per job, not one per worker. Expiry and an optional respondent cap limit a leaked link.
 - The client contact is a user of the app with a login, but a small one: jobs, link, closing date, counts.
 - No email sending from the app. The contact distributes the link herself so it arrives from someone workers know.
+- A link has an optional respondent cap in this release.
+- A worker who started before a link closed or was revoked may finish their interview. New starts are refused.
 
 ## Affected users and systems
 - Chris: every admin screen.
@@ -47,5 +49,4 @@ The app runs one job for one implied organization with no access control. The re
 - Deleting the Smoke Test respondent (do it in the DB before the real run, as noted in CLAUDE.md).
 
 ## Open questions
-- Respondent cap on a link: include in this release, or leave for later? Leaning include, it is one column and one check.
-- When a link is revoked or closed while a worker is mid-interview, do they get to finish? Leaning yes, if they started before the close.
+None. Both earlier questions resolved into Decisions made.
