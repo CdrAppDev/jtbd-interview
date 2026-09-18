@@ -35,13 +35,25 @@ export default async function JobPage({ params, searchParams }: { params: { jobI
       <header className="stack" style={{ gap: 4 }}>
         <div className="eyebrow"><Link href="/admin">Organizations</Link> · <Link href={`/admin/orgs/${job.organization_id}`}>{job.organizations?.name}</Link></div>
         <h1>{job.title}.</h1>
-        <div className="row">
-          <span className="muted small">{progress?.started ?? 0} started, {progress?.finished ?? 0} finished</span>
-          <Link className="btn small" href={`/admin/jobs/${job.id}/results`}>Results</Link>
-          <Link className="btn ghost small" href={`/admin/jobs/${job.id}/content`}>Edit the job content</Link>
-        </div>
+        <p className="muted small">{progress?.started ?? 0} started, {progress?.finished ?? 0} finished</p>
       </header>
       {searchParams.error && <p className="notice">{searchParams.error}</p>}
+
+      <section className="card row between">
+        <div className="stack" style={{ gap: 4 }}>
+          <h2>Results</h2>
+          <p className="muted small">Friction scores, the landscape chart, what to fix first, and which data the job depends on.</p>
+        </div>
+        <Link className="btn" href={`/admin/jobs/${job.id}/results`}>See the results</Link>
+      </section>
+
+      <section className="card row between">
+        <div className="stack" style={{ gap: 4 }}>
+          <h2>Job content</h2>
+          <p className="muted small">The steps, data items and statements workers see.</p>
+        </div>
+        <Link className="btn ghost" href={`/admin/jobs/${job.id}/content`}>Edit the job content</Link>
+      </section>
 
       <section className="card stack" id="link">
         <h2>Interview link</h2>
