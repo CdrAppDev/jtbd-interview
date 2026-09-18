@@ -1,5 +1,5 @@
 # Intent: transcripts and job identification
-Author: Chris. Status: draft. Date: 2026-09-18.
+Author: Chris. Status: accepted. Date: 2026-09-18.
 
 ## Problem
 Identifying which jobs to interview for is the slowest part of setting up an engagement, and I do not want to do it by hand. The evidence is already recorded: client conversations captured in Fellow. Today nothing connects those transcripts to the interview app. I need the app to read the transcripts for an organization, tell me which jobs it found and why, and draft the interview content, so that my part is judging proposals, not writing them.
@@ -42,6 +42,9 @@ Identifying which jobs to interview for is the slowest part of setting up an eng
 - Analysis of interview answers (that is the results page).
 - Branding and Slack (003).
 
+## Decisions at acceptance
+- Build the Fellow import and transcript viewer first and use real imported transcripts to design and tune the job-identification prompts, rather than working from a pasted sample.
+
 ## Open questions
-- Which LLM and what budget per run? A client engagement may be many hours of transcript; we need a cost figure per "Find the jobs" run before the first real use.
-- Should the engine also propose a second-pass merge when two candidates are the same job in different words, or leave that to me?
+- Which LLM and what budget per run? A client engagement may be many hours of transcript; the spec must give a cost figure per "Find the jobs" run before the first real use.
+- Should the engine also propose a second-pass merge when two candidates are the same job in different words, or leave that to Chris? Spec proposes; Chris decides there.
