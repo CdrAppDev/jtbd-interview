@@ -1,34 +1,51 @@
-# Intent: organizations, jobs, and share links
+# Intent: organizations, client contacts, jobs, and interview links
 Author: Chris. Status: draft. Date: 2026-09-18.
 
 ## Problem
-The app runs one job for one implied organization with no access control. The results page is public and any visitor with the anon key can read every answer. I cannot set up a job for a client, send them one link to share with their workers, or see results for that job alone. Job content is seeded by hand in SQL.
+The app runs one job for one implied organization with no access control. The results page is public and any visitor with the anon key can read every answer. I cannot set up a job for a client, give their contact a link to share with workers, see how many interviews are done, or see results for that job alone. Job content is seeded by hand in SQL.
 
 ## Proposed outcome
-- I log in (magic link, my email only). I see a list of organizations and their jobs with a completion count for each.
-- I create an organization (name, contact email). I create a job for it by cloning an existing job or starting from the 8-step skeleton, then edit the job statement, step descriptions, data items, and statements in the app.
-- I generate a share link for the job with an expiry date. I can revoke it. I copy it and send it to the org contact myself.
-- A worker opens the link, reads one sentence saying who sees their answers and what they are used for, enters role (required) and name (optional), and gets interviewed exactly as today. They can leave and come back. No account.
-- On the job page I see respondents as they arrive (role, name if given, step reached, completed) and can open any individual interview.
-- Results are per job, behind my login. The results page itself is unchanged.
-- One client can never see another client's data, and a worker can never read anyone's answers.
+### My side (admin)
+- I log in (magic link to my email). I see every organization, its jobs, and a count of interviews started and finished for each.
+- I create an organization (name, contact name, contact email) and invite the contact. She gets a magic-link login.
+- I create a job for an organization by cloning an existing job or starting from the 8-step skeleton, then edit the job statement, step descriptions, data items, and statements in the app.
+- Each job has one shared interview link. I set the date it closes and can extend it or revoke it.
+- On the job page I see respondents as they arrive (role, name if given, step reached, finished or not) and can open any individual interview.
+- Results are per job, behind my login. The results page itself is unchanged (ODI scoring, tiers, landscape chart, data-item buckets, free-text comments).
+
+### The client contact's side
+- She logs in and sees only her organization's jobs.
+- For each job she sees the interview link, the closing date, and a running count: started and finished. She copies the link and pastes it into her own email or Slack to the workers she chooses. The app sends no email.
+- She sees no names, no answers, no results. A results view for contacts (aggregates only, never free text or individual interviews) is a later intent, decided per engagement.
+
+### The worker's side
+- Opens the link. Reads one sentence saying who sees their answers and what they are used for. Enters role (required) and name (optional). Gets interviewed exactly as today. Can leave and come back. No account.
+- After the closing date the link shows "this interview has closed."
+
+## Decisions made
+- Answers are anonymous. The app never ties an answer to an email address or invite. Name is voluntary.
+- One shared link per job, not one per worker. Expiry and an optional respondent cap limit a leaked link.
+- The client contact is a user of the app with a login, but a small one: jobs, link, closing date, counts.
+- No email sending from the app. The contact distributes the link herself so it arrives from someone workers know.
 
 ## Affected users and systems
 - Chris: every admin screen.
+- Client contact: her own screen.
 - Workers: the interview, reached only via a link.
-- App: new admin routes, the interview route, Supabase schema (organizations, jobs gain organization_id, share links, respondents gain organization_id and link), RLS on every table, Supabase Auth.
+- App: new admin and contact routes, the interview route, Supabase schema (organizations, memberships with roles, jobs gain organization_id, interview links, respondents gain organization_id and link), RLS on every table, Supabase Auth.
 
 ## Constraints
-- Follow the `data-security` skill in full: link-scoped writes, expiry and revocation checked server-side, reads of answers only through authenticated server code, tenancy in RLS, audit log of who viewed individual answers, retention setting on the org.
-- Follow the `voice` skill for all copy, especially the privacy sentence.
+- Follow the `data-security` skill in full: link-scoped writes, expiry and revocation checked server-side, reads of answers only through authenticated server code, tenancy in RLS, roles per org membership (`admin`, `org_viewer` for the contact), audit log of who viewed individual answers, retention setting on the org.
+- Follow the `voice` skill for all copy, especially the privacy sentence and the closed-link message.
 - Keep the stack: Next.js 14 app router, TypeScript, plain CSS, Supabase free plan.
 - The existing seeded job (Derek, SOW) becomes the first job of a first organization. Existing responses are preserved.
 
 ## Out of scope
-- Any login for the org contact. Design roles so `org_viewer` can be added later without a schema change.
+- A results view for the client contact (later intent).
+- Per-worker invite links and email sending.
 - Branding, Slack notifications (003). Transcripts and job identification (004).
 - Deleting the Smoke Test respondent (do it in the DB before the real run, as noted in CLAUDE.md).
 
 ## Open questions
-- One shared link per org, or one link per worker? Leaning shared link with expiry and an optional respondent cap.
-- Does the org contact get a completion count without a login (a public "7 of 10 done" page on the link), or only through me?
+- Respondent cap on a link: include in this release, or leave for later? Leaning include, it is one column and one check.
+- When a link is revoked or closed while a worker is mid-interview, do they get to finish? Leaning yes, if they started before the close.
