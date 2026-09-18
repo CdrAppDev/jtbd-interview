@@ -29,7 +29,10 @@ export default async function Start({ params }: { params: { token: string } }) {
     <main className="wrap stack-lg">
       <header className="stack">
         <div className="eyebrow">Interview · {job.executor_name}, {job.executor_role}</div>
-        <h1 style={BIG}>{job.title}.</h1>
+        <div>
+          <div className="eyebrow" style={{ color: "var(--accent)" }}>The job</div>
+          <h1 style={{ ...BIG, marginTop: 4 }}>{job.title}.</h1>
+        </div>
         {job.description && <p className="muted" style={{ maxWidth: "60ch" }}>{job.description}</p>}
       </header>
 
@@ -43,6 +46,9 @@ export default async function Start({ params }: { params: { token: string } }) {
             </li>
           ))}
         </ol>
+        <p className="hint">
+          There are no right answers. The gap between how the job is supposed to work and how it really works is exactly what we're looking for, so don't clean it up.
+        </p>
       </section>
 
       <section className="section stack">

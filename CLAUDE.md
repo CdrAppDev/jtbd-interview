@@ -4,7 +4,7 @@ A form-based interview that walks a worker through the eight steps of a job (Ulw
 
 Purpose: test whether ODI/JTBD can scope a data migration. "Migrate data from A to B" is the customer's solution, not anyone's job; the job is what workers do with the data. Every stakeholder (including legal and finance) is a job executor and gets interviewed. Only true constraints (laws, target-system limits, cutover dates) live on a separate checklist.
 
-This is an internal mock run. The seeded job is Derek, an account executive at a Salesforce implementation partner: "Put together the statement of work for a deal that's been approved to move forward." Internal teammates answer in Derek's shoes.
+The seeded job is Derek, an account executive at a Salesforce implementation partner: "Put together the statement of work for a deal that's been approved to move forward." The link goes to Derek and anyone else who does this job; respondents answer from their own experience.
 
 ## Development process
 
