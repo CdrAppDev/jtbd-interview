@@ -46,6 +46,13 @@ export default async function Start({ params }: { params: { token: string } }) {
       </section>
 
       <section className="section stack">
+        <h2>Who this is for</h2>
+        <p style={{ maxWidth: "60ch" }}>
+          This interview is for the person who does this job: {job.executor_role}. If that isn't you, ask the person who sent you the link before going on.
+        </p>
+      </section>
+
+      <section className="section stack">
         <h2>Who sees your answers</h2>
         <p style={{ maxWidth: "60ch" }}>
           Your answers go to {CONSULTANT_NAME}, who is helping {open.org_name} understand how this job works today. {open.org_name} will see how many people have finished, not what anyone said.
@@ -70,7 +77,7 @@ export default async function Start({ params }: { params: { token: string } }) {
         ) : (
           <>
             <h2>Before you start</h2>
-            <StartForm token={params.token} />
+            <StartForm token={params.token} defaultRole={job.executor_role} />
           </>
         )}
       </section>

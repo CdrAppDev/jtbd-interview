@@ -51,7 +51,7 @@ export default async function JobContent({ params, searchParams }: { params: { j
           <div className="field"><label htmlFor="title">Job statement</label><input id="title" name="title" defaultValue={job.title} required /></div>
           <div className="form-grid">
             <div className="field"><label htmlFor="executor_name">Executor name</label><input id="executor_name" name="executor_name" defaultValue={job.executor_name} /></div>
-            <div className="field"><label htmlFor="executor_role">Executor role</label><input id="executor_role" name="executor_role" defaultValue={job.executor_role} /></div>
+            <div className="field"><label htmlFor="executor_role">Executor role</label><input id="executor_role" name="executor_role" defaultValue={job.executor_role} /><p className="hint">Shown to workers as who the interview is for, and pre-filled as their role. Keep it short: "Account executive".</p></div>
           </div>
           <div className="field"><label htmlFor="description">Description shown on the first screen</label><textarea id="description" name="description" defaultValue={job.description ?? ""} /></div>
           <div><button className="btn" type="submit">Save</button></div>
