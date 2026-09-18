@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase, type Step, type DataItem, type Statement } from "@/lib/supabase";
+import { type Step, type DataItem, type Statement } from "@/lib/supabase";
+import { saveStep } from "@/lib/interview";
 
 type Rating = { importance?: number; satisfaction?: number };
 
 export default function StepForm({
-  respondentId, step, items, statements, total, existing, existingRatings,
+  token, step, items, statements, total, existing, existingRatings,
 }: {
-  respondentId: string;
+  token: string;
   step: Step;
   items: DataItem[];
   statements: Statement[];
@@ -51,22 +52,15 @@ export default function StepForm({
       return;
     }
     setBusy(true); setErr(null);
-    const db = supabase();
-    const r1 = await db.from("step_responses").upsert(
-      { respondent_id: respondentId, step_id: step.id, data_item_ids: Array.from(checked), other_data: other.trim() || null, free_text: free.trim() || null },
-      { onConflict: "respondent_id,step_id" },
-    );
-    const r2 = await db.from("ratings").upsert(
-      statements.map((s) => ({ respondent_id: respondentId, statement_id: s.id, importance: ratings[s.id].importance!, satisfaction: ratings[s.id].satisfaction! })),
-      { onConflict: "respondent_id,statement_id" },
-    );
-    if (r1.error || r2.error) { setErr("Couldn't save this step. Check your connection and try again."); setBusy(false); return; }
-    if (isLast) {
-      await db.from("respondents").update({ completed_at: new Date().toISOString() }).eq("id", respondentId);
-      router.push(`/done`);
-    } else {
-      router.push(`/interview/${respondentId}/${step.position + 1}`);
-    }
+    const res = await saveStep(token, {
+      stepId: step.id,
+      itemIds: Array.from(checked),
+      other: other.trim(),
+      free: free.trim(),
+      ratings: statements.map((s) => ({ statement_id: s.id, importance: ratings[s.id].importance!, satisfaction: ratings[s.id].satisfaction! })),
+      nextPosition: isLast ? null : step.position + 1,
+    });
+    if (res?.error) { setErr(res.error); setBusy(false); }
   }
 
   return (
@@ -114,7 +108,7 @@ export default function StepForm({
 
       <div className="nav">
         {step.position > 1 ? (
-          <button type="button" className="btn ghost" onClick={() => router.push(`/interview/${respondentId}/${step.position - 1}`)}>Back</button>
+          <button type="button" className="btn ghost" onClick={() => router.push(`/i/${token}/${step.position - 1}`)}>Back</button>
         ) : <span />}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           {err && <span className="err">{err}</span>}

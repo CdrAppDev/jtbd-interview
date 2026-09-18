@@ -30,7 +30,7 @@ Full rules in `.claude/skills/voice/SKILL.md`. The short version:
 ## Stack
 
 - Next.js 14 (app router), TypeScript, plain CSS in `app/globals.css`. No Tailwind, no UI library.
-- Supabase Postgres, accessed with the publishable (anon) key from both server and client. RLS is on; policies allow anon read of content and anon insert/update/read of responses. Fine for an internal test, not for a client run.
+- Supabase Postgres. The publishable (anon) key has no table policies at all; workers reach the database only through the `interview_*` functions (`lib/interview.ts`), with the link token from the URL and a respondent secret in an httpOnly cookie scoped to `/i/<token>`. Signed-in users (Supabase Auth magic link, cookie sessions via `@supabase/ssr`, `lib/supabase-server.ts`) query tables directly and RLS decides: `is_admin()` sees everything, `member_of(org)` sees that org's jobs, links and counts. Policy: `.claude/skills/data-security/SKILL.md`.
 - Fonts: Newsreader (display) + Public Sans (body) via Google Fonts. Palette tokens are in `globals.css`, light and dark.
 
 ## Supabase
@@ -38,16 +38,22 @@ Full rules in `.claude/skills/voice/SKILL.md`. The short version:
 - Project: `jtbd-interview`, ref `xmfyhcxfyzandkpmbfbo`, region us-east-1, org "CdrAppDev's Org" (free plan, 2-project cap).
 - URL: `https://xmfyhcxfyzandkpmbfbo.supabase.co`
 - Publishable key: `sb_publishable_UeW98UzhC_HoGthDOR8KOg_56n7n2R2` (public by design; defaults are in `lib/supabase.ts`, override with `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
-- Migrations applied: `interview_schema`, `seed_derek_sow_job` (visible in the Supabase dashboard under Database > Migrations).
+- Migrations applied, in order: `interview_schema`, `seed_derek_sow_job`, then intent 002's `orgs_and_members`, `interview_links_and_respondents`, `backfill_first_org`, `functions_and_views`, `functions_extension_schema`, `tenant_rls`. Copies are in `supabase/migrations/`. Apply new ones with the Supabase MCP `apply_migration` tool and commit the SQL file alongside.
+- Auth: Supabase Auth email magic links, sent by Supabase's built-in mailer for now (low hourly limit). In the dashboard, Authentication, URL Configuration: Site URL `https://jtbd-interview.vercel.app`, redirect URLs `https://jtbd-interview.vercel.app/auth/callback`, `https://*-chris-projects-2b749b6c.vercel.app/auth/callback`, `http://localhost:3000/auth/callback`. Magic links use the PKCE code flow, so the link must be opened in the browser that requested it.
+- Admins are rows in `admins` (by email; `user_id` is linked on first login by the `claim_memberships` trigger). Chris's email is seeded. Contacts are `memberships` rows with role `org_viewer`, created from the org's contact email.
 
 ### Tables
 
-- `jobs` (slug `sow`), `steps` (8, `position` + `stage` + plain `title`/`description`), `data_items` (25, keyed), `step_data_items` (which items are offered at each step), `statements` (33, each points at one `data_item_id`).
-- `respondents` (name, role, completed_at), `step_responses` (one per respondent+step: `data_item_ids[]`, `other_data`, `free_text`), `ratings` (one per respondent+statement: importance, satisfaction).
-- Content lives in the DB so wording changes need no redeploy.
+- `organizations` (name, slug, contact, `retention_days`), `admins` (email, user_id), `memberships` (org, email, role `org_viewer`, user_id).
+- `jobs` (per org, slug unique per org), `steps` (8, `position` + `stage` + plain `title`/`description`), `data_items` (keyed), `step_data_items` (which items are offered at each step), `statements` (each points at one `data_item_id`).
+- `interview_links` (one active per job: token, `closes_at`, `revoked_at`, `respondent_cap`).
+- `respondents` (org, link, role required, name optional, `token_hash`, completed_at), `step_responses` and `ratings` (both carry `organization_id`), `answer_views` (audit: who opened which respondent, when).
+- View `job_progress` (started, finished per job) is how contacts get counts without row access.
+- Functions: `interview_open/start/resume/step/save/finish` (anon), `clone_job`, `skeleton_job` (admin), `is_admin()`, `member_of(org)`.
+- Content lives in the DB and is edited in the admin job page.
 
 There is one test respondent named "Smoke Test" in the DB. Delete it before the real run:
-`delete from respondents where name = 'Smoke Test';` (cascades).
+`delete from respondents where name = 'Smoke Test';` (cascades). The Derek job lives in the internal organization (slug `internal`) with a link that closes 30 days after 2026-09-18; extend it from the job page.
 
 ## Scoring (results page)
 
@@ -58,10 +64,15 @@ There is one test respondent named "Smoke Test" in the DB. Delete it before the 
 
 ## Routes
 
-- `/` intro + name/role, creates a respondent
-- `/interview/[respondentId]/[step]` one step per screen; revisiting a step reloads saved answers
-- `/done`
-- `/results` (no auth; internal)
+Worker (no account): `/i/[token]` start screen with the privacy sentence, role (required) and name (optional), or "continue" if the cookie is present; `/i/[token]/[step]` one step per screen; `/done`. Closed, revoked or full links show the closed message. Resume works only in the browser that started.
+
+Auth: `/login` (magic link), `/auth/callback`, `/logout` (POST), `/no-access`. `/` redirects to `/login`. Middleware sends signed-out visitors of `/admin/*` and `/org/*` to `/login`.
+
+Admin (`is_admin()`): `/admin` organizations with counts; `/admin/orgs/new`, `/admin/orgs/[orgId]` (details, contact, retention, delete by typing the name); `/admin/orgs/[orgId]/jobs/new` (clone or skeleton); `/admin/jobs/[jobId]` (link, respondents, job, steps, data items, what's offered per step, statements); `/admin/jobs/[jobId]/respondents/[rid]` (one interview, writes an audit row); `/admin/jobs/[jobId]/results` (the results page, scoped to the job). Server actions in `app/admin/actions.ts`.
+
+Contact (`org_viewer`): `/org` their jobs with link, closing date, started and finished counts. Nothing else.
+
+Development process artifacts: `intent/002-orgs-and-links/` holds the intent, spec and plan for this shape of the app.
 
 ## Run
 
@@ -76,7 +87,8 @@ Vercel, team "Chris' projects" (`team_qjcwaOCujkwW7oKLhxvRMqhS`). Import this re
 
 ## Next up
 
-1. Delete the Smoke Test respondent, deploy, share the link with the team.
-2. Read the free-text answers after the first few interviews; add missing data items and statements to the seed (or directly in the DB).
-3. Second job for the same migration: a finance or audit executor, to show the framework catching the retention case.
-4. Constraints checklist (laws, target-system limits, cutover dates) as a separate short form.
+1. Chris: set the Supabase Auth URLs (above), sign in at `/login`, walk the proof screens in `intent/002-orgs-and-links/plan.md`.
+2. Delete the Smoke Test respondent, share the Derek link (from the job page) with the team.
+3. Intents 003 (branding and Slack) and 004 (transcripts and job identification) are drafted under `intent/`.
+4. Follow-up intents noted in the 002 spec: custom login email sender, automatic retention purge, contact results view.
+5. Read the free-text answers after the first few interviews; add missing data items and statements in the admin job page.

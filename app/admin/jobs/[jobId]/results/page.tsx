@@ -1,66 +1,40 @@
-import { supabase, JOB_SLUG, type Job, type Step, type DataItem, type Statement } from "@/lib/supabase";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { supabaseServer } from "@/lib/supabase-server";
+import type { Job, Step, DataItem, Statement } from "@/lib/supabase";
+import { scoreStatements, bucketItems, TIER_LABEL, TIER_VAR, TIER_SOFT, BUCKET, BUCKET_VAR, f1, type RatingRow, type StepResponseRow } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
 
-type Rated = Statement & { stepPos: number; stepTitle: string; n: number; imp: number; sat: number; opp: number; tier: 0 | 1 | 2 | 3 };
+export default async function Results({ params }: { params: { jobId: string } }) {
+  const db = supabaseServer();
+  const { data: job } = await db.from("jobs").select("*").eq("id", params.jobId).maybeSingle<Job>();
+  if (!job) notFound();
 
-function tierOf(opp: number): 0 | 1 | 2 | 3 { return opp >= 15 ? 3 : opp >= 12 ? 2 : opp >= 10 ? 1 : 0; }
-const TIER_LABEL = ["Works well enough", "Worth watching", "High friction", "Fix this first"];
-const TIER_VAR = ["var(--heat-0)", "var(--heat-1)", "var(--heat-2)", "var(--heat-3)"];
-const TIER_SOFT = ["var(--heat-0-soft)", "var(--heat-1-soft)", "var(--heat-2-soft)", "var(--heat-3-soft)"];
-const f1 = (x: number) => x.toFixed(1);
-
-export default async function Results() {
-  const db = supabase();
-  const { data: job } = await db.from("jobs").select("*").eq("slug", JOB_SLUG).single<Job>();
-  if (!job) return <main className="wrap">Job not found.</main>;
-
-  const [{ data: steps }, { data: items }, { data: stmts }, { data: respondents }, { data: ratings }, { data: stepResponses }] = await Promise.all([
+  const [{ data: steps }, { data: items }, { data: respondents }] = await Promise.all([
     db.from("steps").select("*").eq("job_id", job.id).order("position"),
     db.from("data_items").select("*").eq("job_id", job.id),
-    db.from("statements").select("*").order("position"),
     db.from("respondents").select("id, name, role, completed_at").eq("job_id", job.id),
-    db.from("ratings").select("respondent_id, statement_id, importance, satisfaction"),
-    db.from("step_responses").select("respondent_id, step_id, data_item_ids, other_data, free_text"),
   ]);
-
   const S = (steps ?? []) as Step[];
   const stepById = new Map(S.map((s) => [s.id, s]));
   const I = (items ?? []) as DataItem[];
   const itemById = new Map(I.map((i) => [i.id, i]));
-  const R = (ratings ?? []) as { respondent_id: string; statement_id: string; importance: number; satisfaction: number }[];
-  const SR = (stepResponses ?? []) as { respondent_id: string; step_id: string; data_item_ids: string[]; other_data: string | null; free_text: string | null }[];
-  const people = (respondents ?? []) as { id: string; name: string; role: string | null; completed_at: string | null }[];
+  const people = (respondents ?? []) as { id: string; name: string | null; role: string | null; completed_at: string | null }[];
+  const rids = people.map((p) => p.id);
+  const [{ data: stmts }, { data: ratings }, { data: stepResponses }] = await Promise.all([
+    db.from("statements").select("*").in("step_id", S.map((s) => s.id)).order("position"),
+    rids.length ? db.from("ratings").select("respondent_id, statement_id, importance, satisfaction").in("respondent_id", rids) : Promise.resolve({ data: [] as RatingRow[] }),
+    rids.length ? db.from("step_responses").select("respondent_id, step_id, data_item_ids, other_data, free_text").in("respondent_id", rids) : Promise.resolve({ data: [] as StepResponseRow[] }),
+  ]);
+  const R = (ratings ?? []) as RatingRow[];
+  const SR = (stepResponses ?? []) as StepResponseRow[];
   const started = people.length;
   const completed = people.filter((p) => p.completed_at).length;
 
-  // Score each statement
-  const rated: Rated[] = ((stmts ?? []) as Statement[])
-    .filter((st) => stepById.has(st.step_id))
-    .map((st) => {
-      const rs = R.filter((r) => r.statement_id === st.id);
-      const n = rs.length;
-      const mi = n ? rs.reduce((a, r) => a + r.importance, 0) / n : 0;
-      const ms = n ? rs.reduce((a, r) => a + r.satisfaction, 0) / n : 0;
-      const imp = mi * 2, sat = ms * 2;
-      const opp = n ? imp + Math.max(imp - sat, 0) : 0;
-      const step = stepById.get(st.step_id)!;
-      return { ...st, stepPos: step.position, stepTitle: step.title, n, imp, sat, opp, tier: tierOf(opp) };
-    });
+  const rated = scoreStatements((stmts ?? []) as Statement[], S, R);
   const ranked = [...rated].filter((r) => r.n > 0).sort((a, b) => b.opp - a.opp);
-
-  // Data items: who checked what, and the worst statement pointing at each
-  type ItemRow = { item: DataItem; checks: number; people: number; maxOpp: number; steps: Set<number>; bucket: 0 | 1 | 2 };
-  const rows: ItemRow[] = I.map((item) => {
-    const hits = SR.filter((sr) => sr.data_item_ids.includes(item.id));
-    const ppl = new Set(hits.map((h) => h.respondent_id)).size;
-    const stepsHit = new Set(hits.map((h) => stepById.get(h.step_id)?.position ?? 0));
-    const maxOpp = Math.max(0, ...rated.filter((r) => r.data_item_id === item.id && r.n > 0).map((r) => r.opp));
-    const bucket: 0 | 1 | 2 = maxOpp >= 12 ? 2 : ppl > 0 || maxOpp >= 10 ? 1 : 0;
-    return { item, checks: hits.length, people: ppl, maxOpp, steps: stepsHit, bucket };
-  }).sort((a, b) => b.bucket - a.bucket || b.maxOpp - a.maxOpp || b.people - a.people);
-  const BUCKET = ["Leave behind", "Move", "Move carefully"];
-  const BUCKET_VAR = ["var(--heat-0)", "var(--heat-1)", "var(--heat-3)"];
+  const rows = bucketItems(I, rated, SR, S);
 
   // Free text by step
   const comments = SR.filter((sr) => sr.free_text || sr.other_data)
@@ -76,7 +50,7 @@ export default async function Results() {
   return (
     <main className="wrap wide stack-lg">
       <header className="stack" style={{ gap: 8 }}>
-        <div className="eyebrow">Results · {job.executor_name}, {job.executor_role}</div>
+        <div className="eyebrow"><Link href={`/admin/jobs/${job.id}`}>Back to the job</Link> · Results · {job.executor_name}, {job.executor_role}</div>
         <h1 style={{ fontSize: "clamp(28px, 4vw, 38px)", maxWidth: "28ch" }}>{job.title}.</h1>
         <p className="muted">
           {completed} of {started} interviews complete{started ? "" : " (none yet)"}. Scores are on the framework's 0 to 20 scale: importance + (importance − how well it works), each out of 10.
@@ -206,7 +180,7 @@ export default async function Results() {
           <div className="stack">
             {comments.map((c, i) => (
               <div key={i} style={{ display: "grid", gap: 4, paddingBottom: 12, borderBottom: "1px solid var(--rule)" }}>
-                <div className="small muted">Step {c.step!.position} · {c.step!.title} · {c.who?.name ?? "Anonymous"}{c.who?.role ? `, ${c.who.role}` : ""}</div>
+                <div className="small muted">Step {c.step!.position} · {c.step!.title} · {c.who?.role ?? "Anonymous"}{c.who?.name ? `, ${c.who.name}` : ""}</div>
                 {c.other && <div><span className="small" style={{ fontWeight: 600 }}>Also uses: </span>{c.other}</div>}
                 {c.text && <div>{c.text}</div>}
               </div>
@@ -218,7 +192,7 @@ export default async function Results() {
       <section>
         <div className="eyebrow">Who's been through it</div>
         <p className="muted small" style={{ marginTop: 6 }}>
-          {people.length === 0 ? "Nobody yet." : people.map((p) => `${p.name}${p.role ? ` (${p.role})` : ""}${p.completed_at ? "" : " · in progress"}`).join(" · ")}
+          {people.length === 0 ? "Nobody yet." : people.map((p) => `${p.role ?? "(no role)"}${p.name ? ` (${p.name})` : ""}${p.completed_at ? "" : " · in progress"}`).join(" · ")}
         </p>
       </section>
     </main>
