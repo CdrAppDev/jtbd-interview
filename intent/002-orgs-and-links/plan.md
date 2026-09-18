@@ -87,7 +87,9 @@ Applied in this order, each as one `apply_migration` call with the same name as 
    - `clone_job(p_source uuid, p_org uuid, p_slug text)` and `skeleton_job(p_org uuid, p_slug text, p_title text)`: admin-only (`if not is_admin() then raise`), copy steps, data items, step_data_items, statements with id remapping; skeleton inserts the eight stages with placeholder titles. Granted to `authenticated`.
    - View `job_progress` as `security_invoker = false` with body `select j.id as job_id, j.organization_id, count(r.*) filter (where true) as started, count(r.*) filter (where r.completed_at is not null) as finished from jobs j left join respondents r on r.job_id = j.id where is_admin() or member_of(j.organization_id) group by j.id`. Grant select to `authenticated`.
 
-5. `tenant_rls`
+5. `functions_extension_schema` (added during build): pgcrypto is in the `extensions` schema on Supabase and the functions pin `search_path = public`, so `_hash` and `interview_start` are re-created with `extensions.digest` and `extensions.gen_random_bytes`.
+
+6. `tenant_rls`
    - `drop policy` for all fourteen existing policies (named in `pg_policies` today: `read jobs`, `read steps`, `read data_items`, `read step_data_items`, `read statements`, `read respondents`, `insert respondents`, `update respondents`, `read step_responses`, `insert step_responses`, `upsert step_responses`, `read ratings`, `insert ratings`, `upsert ratings`).
    - RLS on the new tables is enabled, with their `admin_all`, `member_read` and `self_read` policies, in the migration that creates each table (1, 2 and 4), so no table is ever open. Migration 5 drops the old anon policies and adds the policies for the pre-existing tables.
    - Policies, all `to authenticated`:
@@ -104,9 +106,9 @@ Each step ends with `npm run typecheck` and `npm run build` green and the deploy
 
 1. **Auth scaffolding, no behaviour change for workers.** Add `@supabase/ssr`. Write `lib/supabase-server.ts`, `lib/auth.ts`, `middleware.ts`, `/login`, `/auth/callback`, `/no-access`, `/logout`, `app/admin/layout.tsx` and a placeholder `app/admin/page.tsx` that prints "Signed in as ...". Apply migration 1. Old routes untouched and still work because old policies still exist.
 2. **Schema for links and tenancy.** Apply migrations 2 and 3. Old routes still work (`name` nullable is compatible; new columns have no effect on old queries).
-3. **Worker path on functions.** Apply migration 4. Write `lib/interview.ts`, `app/i/[token]/page.tsx`, `app/i/[token]/[step]/page.tsx`, rewrite `StartForm` and `StepForm`, update `/done`. Test the Derek link end to end on a preview deployment. Old `/interview` path still works in parallel.
+3. **Worker path on functions.** Apply migration 4. Write `lib/interview.ts`, `app/i/[token]/page.tsx`, `app/i/[token]/[step]/page.tsx`, rewrite `StartForm` and `StepForm`, update `/done`. Test the Derek link end to end on a preview deployment. Deviation while building: the rewritten forms no longer fit the old `/` and `/interview` pages, so those are deleted here and `/` redirects to `/login` from this step (no interviews were in progress). `/results` stays until step 4 moves it.
 4. **Admin and contact screens.** `lib/scoring.ts`, all `app/admin/*` pages and `actions.ts`, `app/org/*`, `CopyButton`, CSS additions. Move and scope the results page. Test as admin on preview: create org, create job by cloning Derek, edit a statement, create link, open it as a worker in a private window, see the respondent appear, open it (audit row written), see results.
-5. **Cut-over.** Apply migration 5. Delete `app/interview/`, `app/results/`, point `/` at `/login`. Redeploy. Confirm anon has no access (proof below).
+5. **Cut-over.** Apply migration 6 (`tenant_rls`). Delete `app/interview/`, `app/results/`, point `/` at `/login`. Redeploy. Confirm anon has no access (proof below).
 6. **Docs.** Update `CLAUDE.md`. Delete the Smoke Test respondent is still Chris's call, not part of this.
 
 One manual step for Chris, before step 1 can be tested: in the Supabase dashboard, Authentication, URL Configuration, set Site URL to the Vercel production URL and add redirect URLs for `https://*.vercel.app/auth/callback` and `http://localhost:3000/auth/callback`. Claude will supply the exact production URL from the Vercel project. Magic links do not work until this is set.
@@ -131,7 +133,7 @@ One manual step for Chris, before step 1 can be tested: in the Supabase dashboar
 ## Proof
 Paste into the PR:
 1. `npm run typecheck` exits 0, `npm run build` lists routes `/`, `/login`, `/auth/callback`, `/no-access`, `/logout`, `/i/[token]`, `/i/[token]/[step]`, `/done`, `/admin`, `/admin/orgs/new`, `/admin/orgs/[orgId]`, `/admin/orgs/[orgId]/jobs/new`, `/admin/jobs/[jobId]`, `/admin/jobs/[jobId]/respondents/[rid]`, `/admin/jobs/[jobId]/results`, `/org`. No `/interview` or `/results`.
-2. SQL via Supabase MCP after migration 5:
+2. SQL via Supabase MCP after migration 6:
    - `select count(*) from pg_policies where roles @> '{anon}'` returns 0.
    - `set role anon; select count(*) from respondents;` returns 0 (and the same for `step_responses`, `ratings`, `interview_links`, `organizations`).
    - `set role anon; select interview_open('<derek token>')->>'status';` returns `open`.

@@ -1,43 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { useFormState, useFormStatus } from "react-dom";
+import { startInterview, type StartState } from "@/lib/interview";
 
-export default function StartForm({ jobId }: { jobId: string }) {
-  const router = useRouter();
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+function Submit() {
+  const { pending } = useFormStatus();
+  return <button className="btn" type="submit" disabled={pending}>{pending ? "Starting…" : "Start the interview"}</button>;
+}
 
-  async function start(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) { setErr("Add your name so we can tell responses apart."); return; }
-    setBusy(true); setErr(null);
-    const { data, error } = await supabase()
-      .from("respondents")
-      .insert({ job_id: jobId, name: name.trim(), role: role.trim() || null })
-      .select("id")
-      .single();
-    if (error || !data) { setErr("Couldn't start the interview. Try again."); setBusy(false); return; }
-    router.push(`/interview/${data.id}/1`);
-  }
-
+export default function StartForm({ token }: { token: string }) {
+  const [state, action] = useFormState<StartState, FormData>(startInterview.bind(null, token), {});
   return (
-    <form onSubmit={start} className="stack">
+    <form action={action} className="stack">
       <div className="field">
-        <label htmlFor="name">Your name</label>
-        <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+        <label htmlFor="role">Your role</label>
+        <input id="role" name="role" type="text" required placeholder="What you do, not your title. For example: delivery lead, account executive" />
       </div>
       <div className="field">
-        <label htmlFor="role">Your actual role (optional)</label>
-        <input id="role" type="text" value={role} onChange={(e) => setRole(e.target.value)} placeholder="e.g. Delivery lead, Architect, AE" />
+        <label htmlFor="name">Your name (optional)</label>
+        <input id="name" name="name" type="text" autoComplete="name" />
       </div>
-      {err && <p className="err">{err}</p>}
-      <div>
-        <button className="btn" type="submit" disabled={busy}>{busy ? "Starting…" : "Start the interview"}</button>
-      </div>
+      {state.error && <p className="err">{state.error}</p>}
+      <div><Submit /></div>
     </form>
   );
 }
