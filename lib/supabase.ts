@@ -14,6 +14,7 @@ export function supabase() {
 
 export type Job = {
   id: string;
+  organization_id: string;
   slug: string;
   title: string;
   executor_name: string;
@@ -31,4 +32,33 @@ export type Step = {
 export type DataItem = { id: string; key: string; name: string };
 export type Statement = { id: string; step_id: string; position: number; text: string; data_item_id: string | null };
 
-export const JOB_SLUG = "sow";
+export type Organization = {
+  id: string;
+  name: string;
+  slug: string;
+  contact_name: string | null;
+  contact_email: string | null;
+  retention_days: number;
+  created_at: string;
+};
+export type InterviewLink = {
+  id: string;
+  organization_id: string;
+  job_id: string;
+  token: string;
+  closes_at: string;
+  revoked_at: string | null;
+  respondent_cap: number | null;
+  created_at: string;
+};
+export type Respondent = {
+  id: string;
+  job_id: string;
+  organization_id: string;
+  link_id: string | null;
+  name: string | null;
+  role: string | null;
+  created_at: string;
+  completed_at: string | null;
+};
+export type JobProgress = { job_id: string; organization_id: string; started: number; finished: number };

@@ -142,3 +142,18 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
 .nav-bar { display: flex; align-items: center; gap: 16px; padding: 12px 24px; border-bottom: 1px solid var(--rule); }
 .nav-bar .brand { font-weight: 600; margin-right: auto; text-decoration: none; }
 .btn.small { padding: 6px 12px; font-size: 14px; }
+
+/* Admin and contact screens */
+.notice { padding: 10px 14px; border-radius: 8px; background: var(--heat-3-soft); color: var(--ink); border: 1px solid var(--heat-3); }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; align-items: end; }
+.form-grid .field { margin: 0; }
+.field textarea { min-height: 72px; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.row.between { justify-content: space-between; }
+.list { display: grid; gap: 10px; }
+.list > * { padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+.list > *:last-child { border-bottom: 0; }
+.card h2 { font-size: 22px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; word-break: break-all; }
+input[type="date"], select { font: inherit; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper-2); color: var(--ink); }
+.linkbox { padding: 12px 14px; border: 1px dashed var(--rule); border-radius: 8px; background: var(--paper-2); }

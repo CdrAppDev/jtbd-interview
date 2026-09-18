@@ -95,7 +95,7 @@ Applied in this order, each as one `apply_migration` call with the same name as 
    - Policies, all `to authenticated`:
      - `organizations`: `admin_all for all using (is_admin()) with check (is_admin())`; `member_read for select using (member_of(id))`.
      - `jobs`: `admin_all`; `member_read for select using (member_of(organization_id))`.
-     - `steps`, `data_items`, `step_data_items`, `statements`: `admin_all` only (join through `jobs` for the org check: `exists(select 1 from jobs where jobs.id = job_id and is_admin())`; for `step_data_items` and `statements` join via `steps`).
+     - `steps`, `data_items`, `step_data_items`, `statements`: `admin_all` only. Built as plain `is_admin()` checks: the admin role is global, so a join through `jobs` adds nothing.
      - `interview_links`: `admin_all`; `member_read for select using (member_of(organization_id))`.
      - `respondents`, `step_responses`, `ratings`, `answer_views`: `admin_all` only.
      - `admins`, `memberships`: `admin_all`; `self_read for select using (user_id = auth.uid())`.
