@@ -6,7 +6,22 @@ Purpose: test whether ODI/JTBD can scope a data migration. "Migrate data from A 
 
 This is an internal mock run. The seeded job is Derek, an account executive at a Salesforce implementation partner: "Put together the statement of work for a deal that's been approved to move forward." Internal teammates answer in Derek's shoes.
 
+## Development process
+
+This repo follows the AI-native SDLC loop described in `.claude/skills/asdlc/SKILL.md`. Every change is a chain of committed artifacts under `intent/<nnn>-<slug>/`: `intent.md` (what and why), `spec.md` (requirements and design with policy applied), `plan.md` (files, order, proof). Chris accepts each gate by setting `Status: accepted`. No implementation starts without an accepted `plan.md`. Stage commands: `/asdlc-intent`, `/asdlc-spec`, `/asdlc-plan`. Reviews follow `REVIEW.md`.
+
+Policy skills, loaded during spec and review: `voice` (language rules) and `data-security` (access control, tenancy, transcripts).
+
+## Verifying your work
+
+- Typecheck: `npm run typecheck` (must print nothing and exit 0)
+- Build: `npm run build` (must finish with "Compiled successfully")
+
+Run both before reporting any build task complete, and paste the output. There is no lint or test suite yet; adding them is a candidate intent. Never weaken a check to make it pass.
+
 ## Language rules (client-facing and in-app)
+
+Full rules in `.claude/skills/voice/SKILL.md`. The short version:
 
 - Workers "get interviewed," never "take a survey."
 - Plain language. No framework jargon in the UI: say "friction," "how well it works today," "what to fix," not "outcome statements" or "opportunity algorithm."
