@@ -157,3 +157,10 @@ td.num { font-variant-numeric: tabular-nums; text-align: right; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; word-break: break-all; }
 input[type="date"], select { font: inherit; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper-2); color: var(--ink); }
 .linkbox { padding: 12px 14px; border: 1px dashed var(--rule); border-radius: 8px; background: var(--paper-2); }
+
+/* Collapsible editor blocks */
+details.card > summary { cursor: pointer; list-style: none; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+details.card > summary::-webkit-details-marker { display: none; }
+details.card > summary::before { content: "▸"; color: var(--ink-3); }
+details.card[open] > summary::before { content: "▾"; }
+details.card h3 { font-size: 17px; }

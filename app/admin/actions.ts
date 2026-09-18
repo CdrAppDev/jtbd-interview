@@ -12,7 +12,7 @@ const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const num = (f: FormData, k: string) => { const v = str(f, k); return v ? Number(v) : null; };
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "job";
 const fail = (path: string, msg: string): never => redirect(`${path}?error=${encodeURIComponent(msg)}`);
-const back = (path: string): never => { revalidatePath(path); revalidatePath("/admin"); redirect(path); };
+const back = (path: string): never => { revalidatePath(path.split("?")[0]); revalidatePath("/admin"); redirect(path); };
 
 async function orgOfJob(jobId: string) {
   const { data } = await supabaseServer().from("jobs").select("organization_id").eq("id", jobId).single();
@@ -99,7 +99,7 @@ export async function createJob(form: FormData) {
 export async function updateJob(form: FormData) {
   await requireAdmin();
   const id = str(form, "id");
-  const path = `/admin/jobs/${id}`;
+  const path = `/admin/jobs/${id}/content?open=job`;
   const title = str(form, "title");
   if (!title) fail(path, "Title is required.");
   const { error } = await supabaseServer()
@@ -110,10 +110,15 @@ export async function updateJob(form: FormData) {
   back(path);
 }
 
+async function stepPath(jobId: string, stepId: string) {
+  const { data } = await supabaseServer().from("steps").select("position").eq("id", stepId).maybeSingle();
+  return `/admin/jobs/${jobId}/content?open=${data?.position ?? ""}`;
+}
+
 export async function saveStepContent(form: FormData) {
   await requireAdmin();
   const jobId = str(form, "job_id");
-  const path = `/admin/jobs/${jobId}`;
+  const path = await stepPath(jobId, str(form, "id"));
   const title = str(form, "title");
   if (!title) fail(path, "Each step needs a title.");
   const { error } = await supabaseServer().from("steps").update({ title, description: str(form, "description") }).eq("id", str(form, "id"));
@@ -124,7 +129,7 @@ export async function saveStepContent(form: FormData) {
 export async function saveDataItem(form: FormData) {
   await requireAdmin();
   const jobId = str(form, "job_id");
-  const path = `/admin/jobs/${jobId}`;
+  const path = `/admin/jobs/${jobId}/content?open=data`;
   const name = str(form, "name");
   if (!name) fail(path, "Data item needs a name.");
   const id = str(form, "id");
@@ -139,7 +144,7 @@ export async function saveDataItem(form: FormData) {
 export async function deleteDataItem(form: FormData) {
   await requireAdmin();
   const jobId = str(form, "job_id");
-  const path = `/admin/jobs/${jobId}`;
+  const path = `/admin/jobs/${jobId}/content?open=data`;
   const id = str(form, "id");
   const db = supabaseServer();
   await db.from("statements").update({ data_item_id: null }).eq("data_item_id", id);
@@ -152,8 +157,8 @@ export async function deleteDataItem(form: FormData) {
 export async function setStepItems(form: FormData) {
   await requireAdmin();
   const jobId = str(form, "job_id");
-  const path = `/admin/jobs/${jobId}`;
   const stepId = str(form, "step_id");
+  const path = await stepPath(jobId, stepId);
   const ids = form.getAll("item").map(String);
   const db = supabaseServer();
   await db.from("step_data_items").delete().eq("step_id", stepId);
@@ -167,7 +172,7 @@ export async function setStepItems(form: FormData) {
 export async function saveStatement(form: FormData) {
   await requireAdmin();
   const jobId = str(form, "job_id");
-  const path = `/admin/jobs/${jobId}`;
+  const path = await stepPath(jobId, str(form, "step_id"));
   const text = str(form, "text");
   if (!text) fail(path, "Statement text is required.");
   const id = str(form, "id");
@@ -181,8 +186,9 @@ export async function saveStatement(form: FormData) {
 export async function deleteStatement(form: FormData) {
   await requireAdmin();
   const jobId = str(form, "job_id");
-  const path = `/admin/jobs/${jobId}`;
   const db = supabaseServer();
+  const { data: st } = await db.from("statements").select("step_id").eq("id", str(form, "id")).maybeSingle();
+  const path = await stepPath(jobId, st?.step_id ?? "");
   await db.from("ratings").delete().eq("statement_id", str(form, "id"));
   const { error } = await db.from("statements").delete().eq("id", str(form, "id"));
   if (error) fail(path, error.message);

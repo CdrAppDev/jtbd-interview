@@ -36,7 +36,7 @@ Admin routes (all under `app/admin/`, all call `requireAdmin()`)
 - `page.tsx` (new): organizations with jobs and started/finished from `job_progress`.
 - `orgs/new/page.tsx` (new), `orgs/[orgId]/page.tsx` (new): details form, contact, retention, jobs list, delete (type the name to confirm).
 - `orgs/[orgId]/jobs/new/page.tsx` (new): clone picker or skeleton.
-- `jobs/[jobId]/page.tsx` (new): three sections on one page, each a plain form: content editor, link panel, respondents table.
+- `jobs/[jobId]/page.tsx` (new): link panel and respondents table, with buttons to results and to the content editor. Deviation after Chris's first look: the content editor was too heavy on the same page, so it moved to `jobs/[jobId]/content/page.tsx`, organized as one collapsible block per step (title, description, items offered there, statements) plus a data items block.
 - `jobs/[jobId]/respondents/[rid]/page.tsx` (new): one interview read-only; inserts `answer_views` first.
 - `jobs/[jobId]/results/page.tsx` (new): `app/results/page.tsx` moved, filtered to the job, using `lib/scoring.ts`.
 - `actions.ts` (new): server actions `createOrg`, `updateOrg`, `deleteOrg`, `createJob` (RPC `clone_job` or `skeleton_job`), `updateJob`, `saveStep`, `saveDataItem`, `deleteDataItem`, `setStepItems`, `saveStatement`, `deleteStatement`, `createLink`, `updateLink`, `revokeLink`. All use the server client; RLS enforces admin.
