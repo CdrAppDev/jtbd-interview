@@ -1,5 +1,7 @@
 # Intent: multi-org, multi-job interview platform (v1)
-Author: Chris. Status: draft. Date: 2026-09-18.
+Author: Chris. Status: superseded. Date: 2026-09-18.
+
+Superseded by 002-orgs-and-links, 003-branding-and-slack, and 004-transcripts-and-job-identification, which split this into shippable pieces in build order. Kept as the record of the original brainstorm.
 
 ## Problem
 The app can only run one job, for one implied organization, with no access control. Content is seeded by hand in SQL, the results page is public, and any visitor with the anon key can read every answer. To use this with real clients I need to set up a job for an organization, send them one link they can share with many workers, get notified as interviews complete, and see results scoped to that job, without workers creating accounts and without one client ever seeing another's data.
