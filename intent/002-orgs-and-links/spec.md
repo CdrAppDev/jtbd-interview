@@ -1,11 +1,11 @@
 # Spec: organizations, client contacts, jobs, and interview links
-From: intent.md (2026-09-18). Status: draft. Date: 2026-09-18.
+From: intent.md (2026-09-18). Status: accepted. Date: 2026-09-18.
 
 ## Concerns
-1. **Resume only on the same browser.** Workers are anonymous, so "leave and come back" works through a cookie on the device they started on. Starting on a phone and finishing on a laptop is not possible without giving the worker an identity. Proposed: accept this, and say so on the first screen ("come back on this device").
-2. **Login emails are sent by Supabase's built-in mailer** (from a supabase.io address, low hourly limit on the free plan). Fine for you and a handful of contacts. Before the first client engagement, a custom sender (Resend or similar, from your domain) should be a small follow-up intent. Not built here.
-3. **Retention is stored, not yet automated.** Each org gets a `retention_days` setting and a "delete organization" action that cascades everything. Automatic purge on the deadline is a later intent. The policy skill says retention is a promise we keep; this release keeps it manually.
-4. **The results page today is unscoped.** It reads every rating and step response in the database. It must be rewritten to filter by job. Not a policy conflict, but a bug that becomes a cross-client leak the moment a second org exists, so it is called out here.
+1. **Resume only on the same browser.** Resolved: accepted, anonymity kept. The first screen tells workers to finish in the same browser they started in, and that clearing browsing data means starting over.
+2. **Login emails are sent by Supabase's built-in mailer** (from a supabase.io address, low hourly limit on the free plan). Resolved: accepted for testing. A custom sender from Chris's domain is a follow-up intent before the first client engagement.
+3. **Retention is stored, not yet automated.** Resolved: accepted. Each org gets a `retention_days` setting and a "delete organization" action that cascades everything. Only the admin can delete; the client contact has no delete of any kind. Automatic purge on the deadline is a later intent.
+4. **The results page today is unscoped.** It reads every rating and step response in the database. Resolved: rewritten to filter by job (requirement 8).
 
 ## Requirements
 Admin (Chris)
@@ -17,11 +17,11 @@ Admin (Chris)
 6. Admin creates the job's interview link with a closing date and an optional respondent cap; can extend the date, change the cap, or revoke the link. One active link per job.
 7. Admin sees the job's respondents (role, name if given, steps saved, finished or not, started at) and can open any individual interview. Opening one writes an audit row.
 8. Admin sees results per job, identical in content to today's results page, filtered to that job.
-9. Admin can delete an organization; everything under it is deleted.
+9. Admin can delete an organization; everything under it is deleted. No other role can delete anything.
 
 Client contact
 10. Contact logs in with a magic link and sees only their organization's jobs.
-11. Per job: the interview link (copy button), the closing date, started count, finished count. Nothing else. No names, no answers, no results.
+11. Per job: the interview link (copy button), the closing date, started count, finished count. Nothing else. No names, no answers, no results, no delete or edit actions.
 
 Worker
 12. Opening a valid link shows the job title, the privacy sentence, and a form: role (required), name (optional). Submitting starts an interview and sets a cookie for that respondent on that browser.
@@ -112,7 +112,8 @@ All screens use the existing CSS tokens and components. Plain forms with server 
 - No other integrations in this release.
 
 ## Copy
-- First screen privacy sentence: "Your answers go to [Chris's company name], who is helping [Org name] understand how this job works today. [Org name] will see how many people have finished, not what anyone said. Come back on this device to pick up where you left off."
+- First screen privacy sentence: "Your answers go to [Chris's company name], who is helping [Org name] understand how this job works today. [Org name] will see how many people have finished, not what anyone said."
+- First screen resume note, directly under the privacy sentence: "Finish in the same browser you start in. You can close the tab and come back, but if you clear your browsing data you will have to start over."
 - Role field label: "Your role". Help: "What you do, not your title. For example: delivery lead, account executive."
 - Name field label: "Your name (optional)".
 - Closed message: "This interview has closed. If you think that is a mistake, ask the person who sent you the link."
