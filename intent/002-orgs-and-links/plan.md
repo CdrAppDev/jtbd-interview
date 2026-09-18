@@ -89,7 +89,7 @@ Applied in this order, each as one `apply_migration` call with the same name as 
 
 5. `tenant_rls`
    - `drop policy` for all fourteen existing policies (named in `pg_policies` today: `read jobs`, `read steps`, `read data_items`, `read step_data_items`, `read statements`, `read respondents`, `insert respondents`, `update respondents`, `read step_responses`, `insert step_responses`, `upsert step_responses`, `read ratings`, `insert ratings`, `upsert ratings`).
-   - Enable RLS on the new tables.
+   - RLS on the new tables is enabled, with their `admin_all`, `member_read` and `self_read` policies, in the migration that creates each table (1, 2 and 4), so no table is ever open. Migration 5 drops the old anon policies and adds the policies for the pre-existing tables.
    - Policies, all `to authenticated`:
      - `organizations`: `admin_all for all using (is_admin()) with check (is_admin())`; `member_read for select using (member_of(id))`.
      - `jobs`: `admin_all`; `member_read for select using (member_of(organization_id))`.

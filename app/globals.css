@@ -137,3 +137,8 @@ th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rul
 th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
 td.num { font-variant-numeric: tabular-nums; text-align: right; }
 .tablewrap { overflow-x: auto; }
+
+/* Signed-in navigation */
+.nav-bar { display: flex; align-items: center; gap: 16px; padding: 12px 24px; border-bottom: 1px solid var(--rule); }
+.nav-bar .brand { font-weight: 600; margin-right: auto; text-decoration: none; }
+.btn.small { padding: 6px 12px; font-size: 14px; }
