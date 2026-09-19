@@ -67,7 +67,7 @@ export default async function Results({ params }: { params: { jobId: string } })
           <section className="grid-2">
             <div className="card">
               <div>
-                <div className="eyebrow">Opportunity landscape</div>
+                <div className="eyebrow">What matters, how well it works</div>
                 <h2 style={{ fontSize: 22, marginTop: 4 }}>Important, but works badly: lower right.</h2>
               </div>
               <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Importance versus how well it works today, one dot per statement" style={{ maxWidth: "100%", display: "block" }}>
@@ -135,8 +135,8 @@ export default async function Results({ params }: { params: { jobId: string } })
                       <td><span className="pill" style={{ background: BUCKET_VAR[r.bucket], color: r.bucket === 0 ? "var(--ink)" : "#fff" }}>{BUCKET[r.bucket]}</span></td>
                       <td className="num">{r.people}</td>
                       <td className="num">{r.checks}</td>
-                      <td className="muted small">{Array.from(r.steps).sort((a, b) => a - b).join(", ") || "—"}</td>
-                      <td className="num">{r.maxOpp ? f1(r.maxOpp) : "—"}</td>
+                      <td className="muted small">{Array.from(r.steps).sort((a, b) => a - b).join(", ") || "–"}</td>
+                      <td className="num">{r.maxOpp ? f1(r.maxOpp) : "–"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -157,10 +157,10 @@ export default async function Results({ params }: { params: { jobId: string } })
                     <tr key={r.id} style={{ background: r.n ? TIER_SOFT[r.tier] : undefined }}>
                       <td className="num">{r.stepPos}.{r.position}</td>
                       <td>{r.text}</td>
-                      <td className="muted small">{r.data_item_id ? itemById.get(r.data_item_id)?.name : "—"}</td>
-                      <td className="num">{r.n ? f1(r.imp) : "—"}</td>
-                      <td className="num">{r.n ? f1(r.sat) : "—"}</td>
-                      <td className="num" style={{ fontWeight: 700 }}>{r.n ? f1(r.opp) : "—"}</td>
+                      <td className="muted small">{r.data_item_id ? itemById.get(r.data_item_id)?.name : "–"}</td>
+                      <td className="num">{r.n ? f1(r.imp) : "–"}</td>
+                      <td className="num">{r.n ? f1(r.sat) : "–"}</td>
+                      <td className="num" style={{ fontWeight: 700 }}>{r.n ? f1(r.opp) : "–"}</td>
                       <td className="num">{r.n}</td>
                     </tr>
                   ))}
