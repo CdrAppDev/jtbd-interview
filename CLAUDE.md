@@ -12,6 +12,22 @@ This repo follows the AI-native SDLC loop described in `.claude/skills/asdlc/SKI
 
 Policy skills, loaded during spec and review: `voice` (language rules) and `data-security` (access control, tenancy, transcripts).
 
+## Before asking Chris for anything
+
+Check the real system first. Chris's time is the scarce resource, and asking
+for something already done wastes it twice.
+
+- Environment variables: read them from the Vercel project with the Vercel
+  tools. The build container has none of them, so its emptiness proves
+  nothing.
+- Database state: query Supabase. Schema, rows, policies.
+- Repository and pull request state: query GitHub.
+- Anything Chris has said before: search this file and `intent/` first, and
+  write down any fact he gives you so it is never asked for twice.
+
+State what you verified and how. Never report something as missing without
+having looked at the system that would hold it.
+
 ## Verifying your work
 
 - Typecheck: `npm run typecheck` (must print nothing and exit 0)
