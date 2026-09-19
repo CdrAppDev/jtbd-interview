@@ -1,5 +1,5 @@
 # Plan: transcripts and job identification
-From: spec.md (2026-09-19). Status: draft. Date: 2026-09-19.
+From: spec.md (2026-09-19). Status: accepted. Date: 2026-09-19.
 
 ## Context
 The app today holds job content, interview links and answers. Nothing connects client conversations to the jobs we interview for. This adds transcripts (imported from Fellow or pasted), an engine that proposes candidate jobs with quotes, review screens where Chris accepts or sets aside each candidate, a drafting step that turns an accepted candidate into a draft job, and a refresh that proposes additions to a drafted job from transcripts that arrive later. Everything is admin only. Runs are driven by the open admin page calling a work route one unit at a time, so no service role key enters the app.
