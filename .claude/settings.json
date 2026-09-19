@@ -1,7 +1,6 @@
 {
   "permissions": {
-    "allow": [
-      "mcp__Supabase"
-    ]
+    "defaultMode": "bypassPermissions",
+    "allow": ["mcp__Supabase", "mcp__github", "mcp__Vercel", "mcp__Claude_Code_Remote", "Bash", "Edit", "Write", "WebFetch", "WebSearch"]
   }
 }
