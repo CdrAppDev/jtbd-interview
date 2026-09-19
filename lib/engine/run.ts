@@ -206,18 +206,17 @@ export async function stateOf(db: Db, run: EngineRun): Promise<RunState> {
 }
 
 async function doUnit(db: Db, run: EngineRun, unit: EngineRunUnit): Promise<unknown> {
-  if (run.kind === "find_jobs" && unit.transcript_id) return await findInOne(db, unit.transcript_id);
+  if (run.kind === "find_jobs" && unit.transcript_id) return await findInOne(db, run.id, unit.transcript_id);
   if (run.kind === "find_jobs") return await compareAll(db, run);
   if (run.kind === "draft_interview") return await draftInterview(db, run);
   if (run.kind === "refresh_evidence" && unit.transcript_id) return await refreshFrom(db, run, unit.transcript_id);
   throw new EngineError("This run has nothing to do.");
 }
 
-async function findInOne(db: Db, transcriptId: string) {
+async function findInOne(db: Db, runId: string, transcriptId: string) {
   const segs = await segmentsOf(db, transcriptId);
   const { value, usage } = await ask<FoundOne>(FIND_ONE_SCHEMA, FIND_ONE, numbered(segs));
-  const { data: run } = await db.from("engine_run_units").select("run_id").eq("transcript_id", transcriptId).limit(1).maybeSingle();
-  if (run) await record(db, run.run_id, usage);
+  await record(db, runId, usage);
   return value;
 }
 
