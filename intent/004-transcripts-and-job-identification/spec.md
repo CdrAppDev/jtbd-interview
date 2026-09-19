@@ -1,5 +1,5 @@
 # Spec: transcripts and job identification
-From: intent.md (2026-09-18). Status: draft. Date: 2026-09-19. Revised 2026-09-19 after review: setting aside replaces rejecting, and jobs can be refreshed from later transcripts.
+From: intent.md (2026-09-18). Status: accepted. Date: 2026-09-19. Revised 2026-09-19 after review: setting aside replaces rejecting, and jobs can be refreshed from later transcripts.
 
 ## Concerns
 1. **Transcripts leave our database.** Each run sends one organization's transcripts to Anthropic's API. Anthropic's standard API terms keep inputs for up to 30 days for abuse monitoring and do not train on them; zero retention is a separate arrangement. Chris decides whether the standard terms are acceptable to clients or arranges zero retention before the first client run, and the engagement paperwork should say transcripts are processed this way.
