@@ -164,3 +164,14 @@ details.card > summary::-webkit-details-marker { display: none; }
 details.card > summary::before { content: "▸"; color: var(--ink-3); }
 details.card[open] > summary::before { content: "▾"; }
 details.card h3 { font-size: 17px; }
+
+/* Intent 004: transcripts, quotes and run progress */
+.segment { border-left: 2px solid var(--rule); padding-left: 12px; }
+.segment p { margin: 2px 0 0; }
+.quote { border-left: 2px solid var(--accent); padding: 2px 0 2px 12px; font-style: italic; }
+.quote .cite { display: block; font-style: normal; font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+.evidence { display: grid; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--rule); }
+.progress { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.progress .bar { flex: 1; height: 6px; background: var(--rule); position: relative; }
+.progress .bar > span { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+.tag { display: inline-block; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; padding: 2px 6px; border: 1px solid var(--rule); color: var(--ink-2); }
