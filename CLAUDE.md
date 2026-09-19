@@ -87,8 +87,14 @@ Vercel, team "Chris' projects" (`team_qjcwaOCujkwW7oKLhxvRMqhS`). Import this re
 
 ## Next up
 
-1. Chris: set the Supabase Auth URLs (above), sign in at `/login`, walk the proof screens in `intent/002-orgs-and-links/plan.md`.
-2. Delete the Smoke Test respondent, share the Derek link (from the job page) with the team.
-3. Intents 003 (branding and Slack) and 004 (transcripts and job identification) are drafted under `intent/`.
-4. Follow-up intents noted in the 002 spec: custom login email sender, automatic retention purge, contact results view.
-5. Read the free-text answers after the first few interviews; add missing data items and statements in the admin job page.
+Where things stand (2026-09-19): intent 002 is shipped and live. Intent 004 (transcripts and job identification) is accepted; its spec is on PR #6 as a draft awaiting Chris. Intent 003 (branding and Slack) comes after 004.
+
+Waiting on Chris before 004 can move to the plan stage:
+1. Resolve the five concerns at the top of `intent/004-transcripts-and-job-identification/spec.md` ("accept all" is fine) and answer its one open question (merge near-duplicate candidates automatically, or list both).
+2. Set the spec to `Status: accepted` and merge PR #6, or tell Claude to.
+3. Add `ANTHROPIC_API_KEY` to Vercel (Secret, all three environments). `FELLOW_API_KEY` (Secret) and `FELLOW_SUBDOMAIN` (`dxfoundation`) are already set.
+4. Optional: put `"defaultMode": "bypassPermissions"` in `.claude/settings.json` (Claude cannot edit its own permissions from a session); add a Fellow API credential to the cloud environment (host `dxfoundation.fellow.app`, header `X-API-KEY`) so sessions can call Fellow without seeing the key.
+
+Then: `/asdlc-plan 004-transcripts-and-job-identification`, build, proof. Fellow API notes for the build: base `https://dxfoundation.fellow.app/api/v1`, header `X-API-KEY`, `POST /recordings` with `pagination` (cursor, page_size 1 to 50), `filters` (title, created_at_start/end, updated_at_start/end, event_guid, channel_id) and `include: {transcript: true}`; `GET /recording/{id}` has no include option, so verify whether it returns the transcript; transcript is `{language_code, speech_segments: [{start, end, speaker, text}]}`; 3 requests per second, 10,000 per day; docs at `https://developers.fellow.ai/llms.txt` (append `.md` to any docs URL for markdown). The cloud environment's network access is set to Full, so sessions can reach Fellow, Supabase and Vercel directly.
+
+Later: delete the three simulated respondents from the Derek job once real interviews start; follow-up intents from the 002 spec (custom login email sender, automatic retention purge, contact results view); read free-text answers after the first real interviews and add missing data items and statements in the job editor.
