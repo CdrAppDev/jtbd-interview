@@ -85,6 +85,13 @@ npm run dev
 
 Vercel, team "Chris' projects" (`team_qjcwaOCujkwW7oKLhxvRMqhS`). Import this repo as a new project; Next.js is auto-detected, no env vars required.
 
+## Fellow and the LLM (intent 004)
+
+- Fellow workspace: `https://dxfoundation.fellow.app/`. `FELLOW_SUBDOMAIN` is `dxfoundation`.
+- The Developer API is switched on. Chris created a personal key named "JTBD Interview" on 2026-09-18; it is `FELLOW_API_KEY`, a server-side secret set in Vercel, never in the repo. Webhooks are not enabled on the workspace and intent 004 does not need them.
+- The app calls Anthropic under its own DX Foundation developer platform account with its own API key (`ANTHROPIC_API_KEY`), separate from Chris's Claude Max plan, which covers build sessions only.
+- Cost of a run: about $0.30 per transcript hour to find the jobs, about $0.10 per transcript hour per interview draft. Ceiling per run is `ENGINE_MAX_INPUT_TOKENS`.
+
 ## Next up
 
 1. Chris: set the Supabase Auth URLs (above), sign in at `/login`, walk the proof screens in `intent/002-orgs-and-links/plan.md`.
