@@ -12,6 +12,22 @@ This repo follows the AI-native SDLC loop described in `.claude/skills/asdlc/SKI
 
 Policy skills, loaded during spec and review: `voice` (language rules) and `data-security` (access control, tenancy, transcripts).
 
+## Before asking Chris for anything
+
+Check the real system first. Chris's time is the scarce resource, and asking
+for something already done wastes it twice.
+
+- Environment variables: read them from the Vercel project with the Vercel
+  tools. The build container has none of them, so its emptiness proves
+  nothing.
+- Database state: query Supabase. Schema, rows, policies.
+- Repository and pull request state: query GitHub.
+- Anything Chris has said before: search this file and `intent/` first, and
+  write down any fact he gives you so it is never asked for twice.
+
+State what you verified and how. Never report something as missing without
+having looked at the system that would hold it.
+
 ## Verifying your work
 
 - Typecheck: `npm run typecheck` (must print nothing and exit 0)
@@ -72,7 +88,7 @@ Admin (`is_admin()`): `/admin` organizations with counts; `/admin/orgs/new`, `/a
 
 Contact (`org_viewer`): `/org` their jobs with link, closing date, started and finished counts. Nothing else.
 
-Development process artifacts: `intent/002-orgs-and-links/` holds the intent, spec and plan for this shape of the app.
+Development process artifacts: `intent/002-orgs-and-links/` holds the intent, spec and plan for this shape of the app. `intent/004-transcripts-and-job-identification/` holds them for transcripts and job identification.
 
 ## Run
 
@@ -85,10 +101,36 @@ npm run dev
 
 Vercel, team "Chris' projects" (`team_qjcwaOCujkwW7oKLhxvRMqhS`). Import this repo as a new project; Next.js is auto-detected, no env vars required.
 
+## Transcripts and the engine (intent 004)
+
+- Fellow workspace: `https://dxfoundation.fellow.app/`. `FELLOW_SUBDOMAIN` is `dxfoundation`.
+- The Developer API is switched on. Chris created a personal key named "JTBD Interview" on 2026-09-18; it is `FELLOW_API_KEY`, a server-side secret set in Vercel, never in the repo. The key is personal, so the app sees exactly what Chris's Fellow account sees. Webhooks are not enabled on the workspace and intent 004 does not need them.
+- The app calls Anthropic under its own DX Foundation developer platform account with its own API key (`ANTHROPIC_API_KEY`), separate from Chris's Claude Max plan, which covers build sessions only. Model is `claude-opus-5`, set in `lib/cost.ts` beside the rates so the estimate and the recorded cost cannot drift.
+- Cost of a run: about $0.30 per transcript hour to find the jobs, about $0.10 per transcript hour per interview draft. `ENGINE_MAX_INPUT_TOKENS` (default 600,000, about 50 hours) refuses a run bigger than that. `.env.example` lists every variable.
+- `lib/fellow.ts` is the only file that talks to Fellow: `POST /recordings` with `{pagination, filters, include}` returning `{page_info, data}`, transcripts asked for on the same call, attendees read from the linked note as a best effort, 350ms between calls for the three-a-second limit.
+- `lib/engine/` is the only place the model is called. `prompts.ts` carries the job rules and the voice rules; `schemas.ts` makes every answer parse; `run.ts` splits a run into units and does one per call; `apply.ts` turns answers into rows. Quotes come back as passage numbers and are resolved against real rows, so an invented quote is dropped rather than stored.
+- A run is driven by the open admin page calling `POST /admin/api/runs/[runId]/work` (maxDuration 300) as the signed-in admin, one unit per request. No service role key exists in the app. Closing the tab pauses a run; reopening the page resumes it. Three failures on one unit fail the run.
+
+### Tables added by 004
+
+- `transcripts` (per org, `source` fellow or paste, `fellow_recording_id` unique per org, attendees, duration), `transcript_segments` (speaker, start, end, text, unique per position), `transcript_views` (audit: who opened which transcript, when).
+- `engine_runs` (kind, status, the transcript ids it may read, model, units, tokens, `cost_cents`) and `engine_run_units` (one call each, `result` jsonb, attempts). The unit rows are the audit of what was sent to the model.
+- `job_candidates` (kind job, solution or constraint; status proposed, accepted or `set_aside`; `merged_from`) and `candidate_quotes` (speaker, text and transcript title copied, so a quote survives its transcript being deleted).
+- `jobs` gains `draft` and `candidate_id`. `draft_evidence` holds the quote behind each part of a drafted job. `job_proposals` holds what a refresh run suggests adding.
+- Function `create_draft_job(org, candidate, slug, payload)` writes a whole drafted job in one transaction, admin checked inside.
+- Every 004 table has RLS on with one `admin_all` policy and carries `organization_id`. No anon or org viewer access, by any route.
+
+### Routes added by 004
+
+- `/admin/orgs/[orgId]/transcripts` (list, the find-the-jobs card with its estimate, past runs), `.../transcripts/import` (Fellow), `.../transcripts/paste`, `.../transcripts/[tid]` (writes an audit row).
+- `/admin/orgs/[orgId]/candidates`: to review, accepted, set aside, not a job. Setting aside only keeps a candidate out of the interview list: it keeps its quotes, gains new ones from later runs, and can be brought back.
+- `/admin/jobs/[jobId]` gains a Draft label, a link to the candidate, and a "Check for new evidence" card. `/admin/jobs/[jobId]/content` shows the evidence under each part, with Remove.
+- `POST /admin/api/runs/[runId]/work` and `GET /admin/api/runs/[runId]`.
+
 ## Next up
 
-1. Chris: set the Supabase Auth URLs (above), sign in at `/login`, walk the proof screens in `intent/002-orgs-and-links/plan.md`.
+1. Chris: set `FELLOW_API_KEY`, `FELLOW_SUBDOMAIN` and `ANTHROPIC_API_KEY` in Vercel, then walk the proof steps in `intent/004-transcripts-and-job-identification/plan.md`.
 2. Delete the Smoke Test respondent, share the Derek link (from the job page) with the team.
-3. Intents 003 (branding and Slack) and 004 (transcripts and job identification) are drafted under `intent/`.
-4. Follow-up intents noted in the 002 spec: custom login email sender, automatic retention purge, contact results view.
+3. Intent 003 (branding and Slack) is drafted under `intent/`.
+4. Follow-up intents: custom login email sender, automatic retention purge, contact results view, automatic Fellow sync, a zero-retention arrangement with Anthropic before the first client's transcripts are imported.
 5. Read the free-text answers after the first few interviews; add missing data items and statements in the admin job page.

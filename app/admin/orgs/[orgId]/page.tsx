@@ -8,10 +8,14 @@ export default async function OrgPage({ params, searchParams }: { params: { orgI
   const db = supabaseServer();
   const { data: org } = await db.from("organizations").select("*").eq("id", params.orgId).maybeSingle<Organization>();
   if (!org) notFound();
-  const [{ data: jobs }, { data: progress }] = await Promise.all([
-    db.from("jobs").select("id, slug, title").eq("organization_id", org.id).order("title"),
+  const [{ data: jobs }, { data: progress }, transcripts, candidates] = await Promise.all([
+    db.from("jobs").select("id, slug, title, draft").eq("organization_id", org.id).order("title"),
     db.from("job_progress").select("*").eq("organization_id", org.id),
+    db.from("transcripts").select("id", { count: "exact", head: true }).eq("organization_id", org.id),
+    db.from("job_candidates").select("status").eq("organization_id", org.id),
   ]);
+  const toReview = ((candidates.data ?? []) as { status: string }[]).filter((c) => c.status === "proposed").length;
+  const accepted = ((candidates.data ?? []) as { status: string }[]).filter((c) => c.status === "accepted").length;
   const P = new Map(((progress ?? []) as JobProgress[]).map((p) => [p.job_id, p]));
 
   return (
@@ -22,6 +26,23 @@ export default async function OrgPage({ params, searchParams }: { params: { orgI
       </header>
       {searchParams.error && <p className="notice">{searchParams.error}</p>}
 
+      <div className="form-grid">
+        <section className="card stack">
+          <div className="stack" style={{ gap: 4 }}>
+            <h2>Transcripts</h2>
+            <p className="muted small">Client conversations the jobs are found in. {transcripts.count ?? 0} stored.</p>
+          </div>
+          <div><Link className="btn ghost small" href={`/admin/orgs/${org.id}/transcripts`}>Open transcripts</Link></div>
+        </section>
+        <section className="card stack">
+          <div className="stack" style={{ gap: 4 }}>
+            <h2>Candidate jobs</h2>
+            <p className="muted small">What the transcripts suggest the jobs are. You decide. {toReview} to review, {accepted} accepted.</p>
+          </div>
+          <div><Link className="btn ghost small" href={`/admin/orgs/${org.id}/candidates`}>Open candidates</Link></div>
+        </section>
+      </div>
+
       <section className="card stack">
         <div className="row between">
           <h2>Jobs</h2>
@@ -31,9 +52,9 @@ export default async function OrgPage({ params, searchParams }: { params: { orgI
           <table>
             <thead><tr><th>Job</th><th style={{ textAlign: "right" }}>Started</th><th style={{ textAlign: "right" }}>Finished</th><th></th></tr></thead>
             <tbody>
-              {((jobs ?? []) as Pick<Job, "id" | "slug" | "title">[]).map((j) => (
+              {((jobs ?? []) as Pick<Job, "id" | "slug" | "title" | "draft">[]).map((j) => (
                 <tr key={j.id}>
-                  <td><Link href={`/admin/jobs/${j.id}`}>{j.title}</Link></td>
+                  <td><Link href={`/admin/jobs/${j.id}`}>{j.title}</Link>{j.draft && <> <span className="tag">Draft</span></>}</td>
                   <td className="num">{P.get(j.id)?.started ?? 0}</td>
                   <td className="num">{P.get(j.id)?.finished ?? 0}</td>
                   <td className="small"><Link href={`/admin/jobs/${j.id}/results`}>Results</Link></td>
@@ -60,7 +81,7 @@ export default async function OrgPage({ params, searchParams }: { params: { orgI
 
       <form action={deleteOrg} className="card stack">
         <h2>Delete this organization</h2>
-        <p className="muted small">Deletes every job, link, respondent and answer under it. There is no undo. Type the organization's name to confirm.</p>
+        <p className="muted small">Deletes every job, link, respondent, answer and transcript under it. There is no undo. Type the organization's name to confirm.</p>
         <input type="hidden" name="id" value={org.id} />
         <div className="row">
           <input name="confirm" placeholder={org.name} style={{ maxWidth: 320 }} />
